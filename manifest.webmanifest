@@ -1,0 +1,9 @@
+{
+  "name": "生活",
+  "short_name": "生活",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fbf7f1",
+  "theme_color": "#f6efe7",
+  "icons": []
+}

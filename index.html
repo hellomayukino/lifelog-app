@@ -1,723 +1,186 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>買い忘れ防止</title>
-  <style>
-    :root {
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --text: #0f172a;
-      --muted: #64748b;
-      --line: #e2e8f0;
-      --dark: #0f172a;
-      --rose-bg: #fff1f2;
-      --rose: #be123c;
-      --amber-bg: #fffbeb;
-      --amber: #92400e;
-      --green-bg: #ecfdf5;
-      --green: #047857;
-      --indigo: #4f46e5;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-    .app {
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 18px 14px 92px;
-    }
-    .header, .card, .form-card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
-    }
-    .header { padding: 18px; margin-bottom: 16px; }
-    .top-row, .card-head, .item-actions, .group-row {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    .kicker {
-      margin: 0 0 4px;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: .18em;
-      color: #94a3b8;
-      text-transform: uppercase;
-    }
-    h1 { margin: 0; font-size: 26px; line-height: 1.2; }
-    h2 { margin: 0; font-size: 19px; }
-    h3 { margin: 0; font-size: 16px; }
-    p { margin: 0; }
-    .muted { color: var(--muted); font-size: 14px; margin-top: 4px; }
-    .btn {
-      border: 0;
-      border-radius: 14px;
-      padding: 11px 14px;
-      font-weight: 800;
-      cursor: pointer;
-      background: #f1f5f9;
-      color: #334155;
-      font-size: 14px;
-    }
-    .btn:active { transform: scale(.99); }
-    .btn-primary { background: var(--dark); color: #fff; }
-    .btn-danger { background: var(--rose-bg); color: var(--rose); }
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 14px;
-    }
-    .summary-box {
-      border-radius: 18px;
-      text-align: center;
-      padding: 12px 6px;
-      font-weight: 800;
-    }
-    .summary-box strong { display: block; font-size: 22px; }
-    .summary-box span { font-size: 12px; }
-    .urgent-box { background: var(--rose-bg); color: var(--rose); }
-    .attention-box { background: var(--amber-bg); color: var(--amber); }
-    .ok-box { background: var(--green-bg); color: var(--green); }
-    .tabs {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(255,255,255,.96);
-      border-top: 1px solid var(--line);
-      padding: 8px 10px;
-      backdrop-filter: blur(8px);
-    }
-    .tabs-inner {
-      max-width: 780px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
-    .tab {
-      border: 0;
-      border-radius: 16px;
-      padding: 12px 4px;
-      font-weight: 800;
-      background: transparent;
-      color: #64748b;
-      cursor: pointer;
-    }
-    .tab.active { background: var(--dark); color: white; }
-    .section { display: grid; gap: 14px; }
-    .filter-row {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-    }
-    .pill {
-      flex: 0 0 auto;
-      border: 1px solid var(--line);
-      background: #fff;
-      color: #334155;
-      border-radius: 999px;
-      padding: 9px 14px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .pill.active { background: var(--dark); color: #fff; border-color: var(--dark); }
-    .items { display: grid; gap: 10px; }
-    .card { padding: 14px; }
-    .title-line {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .badge {
-      display: inline-flex;
-      border-radius: 999px;
-      padding: 5px 9px;
-      font-size: 12px;
-      font-weight: 800;
-      border: 1px solid transparent;
-    }
-    .badge.urgent { background: var(--rose-bg); color: var(--rose); border-color: #fecdd3; }
-    .badge.attention { background: var(--amber-bg); color: var(--amber); border-color: #fde68a; }
-    .badge.ok { background: var(--green-bg); color: var(--green); border-color: #bbf7d0; }
-    .meta { color: var(--muted); font-size: 13px; margin-top: 5px; line-height: 1.45; }
-    .note {
-      margin-top: 9px;
-      background: #f8fafc;
-      border-radius: 13px;
-      padding: 9px 10px;
-      color: #475569;
-      font-size: 14px;
-    }
-    .subscription {
-      margin-top: 8px;
-      color: var(--indigo);
-      font-size: 12px;
-      font-weight: 800;
-    }
-    .item-actions {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      margin-top: 12px;
-    }
-    .empty {
-      border: 1px dashed #cbd5e1;
-      border-radius: 18px;
-      background: #fff;
-      padding: 28px 12px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .form-card { padding: 14px; display: grid; gap: 12px; }
-    .form-grid { display: grid; gap: 10px; }
-    .two-col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    label {
-      display: grid;
-      gap: 5px;
-      font-size: 13px;
-      font-weight: 800;
-      color: #334155;
-    }
-    input, select {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px;
-      font-size: 16px;
-      background: #fff;
-      color: var(--text);
-    }
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .checkbox-label input { width: auto; }
-    .group-box {
-      background: #f8fafc;
-      border-radius: 16px;
-      padding: 10px;
-      display: grid;
-      gap: 8px;
-    }
-    .group-row {
-      align-items: center;
-      background: #fff;
-      border-radius: 14px;
-      padding: 9px 10px;
-      border: 1px solid var(--line);
-    }
-    .mini-actions { display: flex; gap: 6px; }
-    .mini-actions .btn { padding: 7px 9px; font-size: 12px; border-radius: 10px; }
-    .search-card {
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      padding: 12px;
-    }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f6efe7" />
+  <title>生活</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="root"></div>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Personal Life OS</p>
+        <h1>生活</h1>
+        <p class="subcopy">日常の詰まりを、少しずつほどくためのメモ。</p>
+      </div>
+      <button id="resetDemo" class="ghost small" type="button">初期化</button>
+    </header>
 
-  <script>
-    const STORAGE_KEY = "shopping-helper-v1-static";
-    const typeLabel = { store: "実店舗", online: "通販" };
-    const todayISO = () => new Date().toISOString().slice(0, 10);
-    const makeId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+    <nav class="tabs" aria-label="メインメニュー">
+      <button class="tab active" data-tab="today" type="button">今日</button>
+      <button class="tab" data-tab="buy" type="button">買う</button>
+      <button class="tab" data-tab="care" type="button">整える</button>
+      <button class="tab" data-tab="reduce" type="button">減らす</button>
+      <button class="tab" data-tab="memo" type="button">メモ</button>
+    </nav>
 
-    function addDays(dateString, days) {
-      const date = new Date(dateString + "T00:00:00");
-      date.setDate(date.getDate() + Number(days || 0));
-      return date.toISOString().slice(0, 10);
-    }
-    function diffDays(targetDateString) {
-      const today = new Date(todayISO() + "T00:00:00");
-      const target = new Date(targetDateString + "T00:00:00");
-      return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-    }
-
-    const defaultState = {
-      groups: {
-        store: ["まいばす", "マルエツ", "トモズ", "100均"],
-        online: ["Amazon", "ヨドバシ"]
-      },
-      items: [
-        { name: "牛乳", type: "store", group: "まいばす", intervalDays: 3, lastBought: todayISO(), note: "1本", subscription: false },
-        { name: "バナナ", type: "store", group: "まいばす", intervalDays: 5, lastBought: todayISO(), note: "", subscription: false },
-        { name: "トイレットペーパー", type: "store", group: "まいばす", intervalDays: 30, lastBought: todayISO(), note: "12巻", subscription: false },
-        { name: "紅茶", type: "store", group: "マルエツ", intervalDays: 45, lastBought: todayISO(), note: "100p", subscription: false },
-        { name: "ジャム", type: "store", group: "マルエツ", intervalDays: 30, lastBought: todayISO(), note: "", subscription: false },
-        { name: "ティッシュ", type: "store", group: "トモズ", intervalDays: 30, lastBought: todayISO(), note: "", subscription: false },
-        { name: "保湿ティッシュ", type: "store", group: "トモズ", intervalDays: 45, lastBought: todayISO(), note: "", subscription: false },
-        { name: "ナプキン", type: "store", group: "トモズ", intervalDays: 45, lastBought: todayISO(), note: "", subscription: false },
-        { name: "おりものシート", type: "store", group: "トモズ", intervalDays: 45, lastBought: todayISO(), note: "", subscription: false },
-        { name: "クイックルワイパーのシート", type: "store", group: "100均", intervalDays: 30, lastBought: todayISO(), note: "", subscription: false },
-        { name: "キッチンペーパー", type: "store", group: "100均", intervalDays: 30, lastBought: todayISO(), note: "", subscription: false },
-        { name: "コットン", type: "store", group: "100均", intervalDays: 30, lastBought: todayISO(), note: "", subscription: false },
-        { name: "ポリ袋", type: "store", group: "100均", intervalDays: 60, lastBought: todayISO(), note: "", subscription: false },
-        { name: "カフェインレス紅茶", type: "online", group: "Amazon", intervalDays: 45, lastBought: todayISO(), note: "20袋入 ×3箱", subscription: true },
-        { name: "プロテインパンケーキ", type: "online", group: "Amazon", intervalDays: 30, lastBought: todayISO(), note: "600g ×2袋", subscription: true },
-        { name: "泡キッチンハイター", type: "online", group: "Amazon", intervalDays: 60, lastBought: todayISO(), note: "1000mL", subscription: true },
-        { name: "ゴミ袋", type: "online", group: "Amazon", intervalDays: 120, lastBought: todayISO(), note: "東日本60号100枚", subscription: false },
-        { name: "綿棒", type: "online", group: "Amazon", intervalDays: 180, lastBought: todayISO(), note: "200本×10個", subscription: true },
-        { name: "マルチビタミンサプリ", type: "online", group: "Amazon", intervalDays: 30, lastBought: todayISO(), note: "", subscription: true },
-        { name: "歯ブラシ", type: "online", group: "ヨドバシ", intervalDays: 30, lastBought: todayISO(), note: "", subscription: false },
-        { name: "ラップ", type: "online", group: "ヨドバシ", intervalDays: 60, lastBought: todayISO(), note: "30cm×50m", subscription: false },
-        { name: "洗濯槽クリーナー", type: "online", group: "ヨドバシ", intervalDays: 30, lastBought: todayISO(), note: "ガチのやつ", subscription: false }
-      ].map(item => ({ id: makeId(), ...item }))
-    };
-
-    let state = loadState();
-    let tab = "today";
-    let selectedStoreGroup = state.groups.store[0] || "";
-    let selectedOnlineGroup = state.groups.online[0] || "";
-    let showForm = false;
-    let editingId = null;
-    let searchText = "";
-    let form = {
-      name: "",
-      type: "store",
-      group: state.groups.store[0] || "",
-      intervalDays: 30,
-      lastBought: todayISO(),
-      note: "",
-      subscription: false
-    };
-
-    function loadState() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        return saved ? JSON.parse(saved) : defaultState;
-      } catch {
-        return defaultState;
-      }
-    }
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-    function getItemMeta(item) {
-      const nextDate = addDays(item.lastBought, item.intervalDays);
-      const remain = diffDays(nextDate);
-      const soonWindow = Math.max(2, Math.ceil(Number(item.intervalDays || 1) * 0.2));
-      if (item.type === "online" && item.subscription && remain <= soonWindow && remain >= -3) {
-        return { nextDate, remain, status: "定期便確認", level: "attention" };
-      }
-      if (remain < 0) {
-        return {
-          nextDate,
-          remain,
-          status: item.type === "online" ? "注文した方がいい" : "買った方がいい",
-          level: "urgent"
-        };
-      }
-      if (remain <= soonWindow) {
-        return {
-          nextDate,
-          remain,
-          status: item.type === "online" ? "そろそろ注文" : "ついでに買う",
-          level: "attention"
-        };
-      }
-      return { nextDate, remain, status: "在庫OK", level: "ok" };
-    }
-
-    function escapeHTML(value) {
-      return String(value ?? "").replace(/[&<>"']/g, s => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
-      }[s]));
-    }
-
-    function renderItemCard(item) {
-      const meta = getItemMeta(item);
-      const remainText = meta.remain >= 0 ? `あと${meta.remain}日` : `${Math.abs(meta.remain)}日超過`;
-      return `
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="title-line">
-                <h3>${escapeHTML(item.name)}</h3>
-                <span class="badge ${meta.level}">${escapeHTML(meta.status)}</span>
-              </div>
-              <div class="meta">${typeLabel[item.type]} / ${escapeHTML(item.group)} / ${item.intervalDays}日ごと</div>
-              <div class="meta">次回目安：${meta.nextDate}（${remainText}）</div>
-              ${item.note ? `<div class="note">${escapeHTML(item.note)}</div>` : ""}
-              ${item.subscription ? `<div class="subscription">定期便あり</div>` : ""}
-            </div>
-          </div>
-          <div class="item-actions">
-            <button class="btn btn-primary" onclick="markBought('${item.id}')">買った</button>
-            <button class="btn" onclick="startEdit('${item.id}')">編集</button>
-            <button class="btn btn-danger" onclick="deleteItem('${item.id}')">削除</button>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderItems(items, emptyText) {
-      if (!items.length) return `<div class="empty">${escapeHTML(emptyText)}</div>`;
-      return `<div class="items">${items.map(renderItemCard).join("")}</div>`;
-    }
-
-    function getEnrichedItems() {
-      return state.items.map(item => ({ ...item, meta: getItemMeta(item) }));
-    }
-
-    function renderHeader() {
-      const enriched = getEnrichedItems();
-      const counts = enriched.reduce((acc, item) => {
-        acc[item.meta.level] += 1;
-        return acc;
-      }, { urgent: 0, attention: 0, ok: 0 });
-      return `
-        <header class="header">
-          <div class="top-row">
-            <div>
-              <p class="kicker">Shopping Helper</p>
-              <h1>買い忘れ防止</h1>
-              <p class="muted">今日は ${todayISO()}</p>
-            </div>
-            <button class="btn btn-primary" onclick="startAdd()">＋追加</button>
-          </div>
-          <div class="summary">
-            <div class="summary-box urgent-box"><strong>${counts.urgent}</strong><span>優先</span></div>
-            <div class="summary-box attention-box"><strong>${counts.attention}</strong><span>そろそろ</span></div>
-            <div class="summary-box ok-box"><strong>${counts.ok}</strong><span>在庫OK</span></div>
-          </div>
-        </header>
-      `;
-    }
-
-    function renderToday() {
-      const items = getEnrichedItems()
-        .filter(item => item.meta.level !== "ok")
-        .sort((a, b) => a.meta.remain - b.meta.remain);
-      return `
-        <section class="section">
+    <main>
+      <section id="today" class="panel active" aria-labelledby="today-title">
+        <div class="section-head">
           <div>
-            <h2>今日の候補</h2>
-            <p class="muted">期限が近いものと過ぎたものだけを表示します。</p>
+            <h2 id="today-title">今日</h2>
+            <p>今やると生活が少し軽くなること。</p>
           </div>
-          ${renderItems(items, "今すぐ買う・注文する候補はありません。")}
-        </section>
-      `;
-    }
+          <button id="refreshToday" class="primary" type="button">提案を更新</button>
+        </div>
 
-    function renderStore() {
-      if (!state.groups.store.includes(selectedStoreGroup)) selectedStoreGroup = state.groups.store[0] || "";
-      const items = getEnrichedItems().filter(item => item.type === "store" && item.group === selectedStoreGroup);
-      return `
-        <section class="section">
+        <div class="quick-actions">
+          <button class="time-chip" data-minutes="5" type="button">5分</button>
+          <button class="time-chip" data-minutes="15" type="button">15分</button>
+          <button class="time-chip" data-minutes="30" type="button">30分</button>
+          <button class="time-chip" data-minutes="60" type="button">1時間</button>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <h3>時間別サジェスト</h3>
+            <div id="timeSuggestions" class="list empty-state">上の時間ボタンを押すと、今できる候補が出ます。</div>
+          </article>
+          <article class="card">
+            <h3>そろそろ</h3>
+            <div id="soonList" class="list"></div>
+          </article>
+        </div>
+
+        <article class="card">
+          <h3>今日の小さな提案</h3>
+          <div id="todaySuggestions" class="suggestions"></div>
+        </article>
+      </section>
+
+      <section id="buy" class="panel" aria-labelledby="buy-title">
+        <div class="section-head">
           <div>
-            <h2>実店舗</h2>
-            <p class="muted">寄るお店を選ぶと、そのグループの商品だけ表示します。</p>
+            <h2 id="buy-title">買う</h2>
+            <p>日用品・食品・通販の買い忘れを減らす。</p>
           </div>
-          <div class="filter-row">
-            ${state.groups.store.map(group => `
-              <button class="pill ${selectedStoreGroup === group ? "active" : ""}" onclick="selectStoreGroup('${escapeHTML(group)}')">${escapeHTML(group)}</button>
-            `).join("")}
-          </div>
-          ${renderItems(items, "このグループの商品はまだありません。")}
-        </section>
-      `;
-    }
+        </div>
+        <form id="buyForm" class="form card">
+          <input name="item" placeholder="商品名 例：洗剤" required />
+          <input name="place" placeholder="お店・通販先 例：Amazon" />
+          <select name="status">
+            <option>優先</option>
+            <option>そろそろ</option>
+            <option>ついでに買う</option>
+            <option>在庫OK</option>
+          </select>
+          <input name="price" inputmode="numeric" placeholder="値段" />
+          <input name="bestPrice" inputmode="numeric" placeholder="底値" />
+          <button class="primary" type="submit">追加</button>
+        </form>
+        <div id="buyList" class="list stacked"></div>
+      </section>
 
-    function renderOnline() {
-      if (!state.groups.online.includes(selectedOnlineGroup)) selectedOnlineGroup = state.groups.online[0] || "";
-      const items = getEnrichedItems().filter(item => item.type === "online" && item.group === selectedOnlineGroup);
-      return `
-        <section class="section">
+      <section id="care" class="panel" aria-labelledby="care-title">
+        <div class="section-head">
           <div>
-            <h2>通販</h2>
-            <p class="muted">注文・定期便確認をまとめて管理します。</p>
-          </div>
-          <div class="filter-row">
-            ${state.groups.online.map(group => `
-              <button class="pill ${selectedOnlineGroup === group ? "active" : ""}" onclick="selectOnlineGroup('${escapeHTML(group)}')">${escapeHTML(group)}</button>
-            `).join("")}
-          </div>
-          ${renderItems(items, "この通販先の商品はまだありません。")}
-        </section>
-      `;
-    }
-
-    function renderForm() {
-      const groups = state.groups[form.type] || [];
-      if (!groups.includes(form.group)) form.group = groups[0] || "";
-      return `
-        <div class="form-card">
-          <h2>${editingId ? "商品を編集" : "商品を追加"}</h2>
-          <div class="form-grid">
-            <label>商品名
-              <input id="formName" value="${escapeHTML(form.name)}" placeholder="例：牛乳" oninput="form.name=this.value">
-            </label>
-            <div class="two-col">
-              <label>区分
-                <select id="formType" onchange="changeFormType(this.value)">
-                  <option value="store" ${form.type === "store" ? "selected" : ""}>実店舗</option>
-                  <option value="online" ${form.type === "online" ? "selected" : ""}>通販</option>
-                </select>
-              </label>
-              <label>グループ
-                <select id="formGroup" onchange="form.group=this.value">
-                  ${groups.map(group => `<option value="${escapeHTML(group)}" ${form.group === group ? "selected" : ""}>${escapeHTML(group)}</option>`).join("")}
-                </select>
-              </label>
-            </div>
-            <div class="two-col">
-              <label>頻度（日）
-                <input type="number" min="1" value="${Number(form.intervalDays)}" oninput="form.intervalDays=Number(this.value)">
-              </label>
-              <label>最後に買った日
-                <input type="date" value="${form.lastBought}" onchange="form.lastBought=this.value">
-              </label>
-            </div>
-            <label>メモ
-              <input value="${escapeHTML(form.note)}" placeholder="容量・価格・個数など" oninput="form.note=this.value">
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" ${form.subscription ? "checked" : ""} onchange="form.subscription=this.checked">
-              定期便あり
-            </label>
-          </div>
-          <div class="two-col">
-            <button class="btn btn-primary" onclick="saveForm()">保存</button>
-            <button class="btn" onclick="cancelForm()">キャンセル</button>
+            <h2 id="care-title">整える</h2>
+            <p>美容・ヘア・脱毛・体のメンテ記録。</p>
           </div>
         </div>
-      `;
-    }
+        <form id="careForm" class="form card">
+          <input name="date" type="date" required />
+          <select name="category">
+            <option>美容医療</option>
+            <option>ヘア</option>
+            <option>脱毛</option>
+            <option>ネイル</option>
+            <option>肌管理</option>
+            <option>体調</option>
+          </select>
+          <input name="title" placeholder="施術・内容 例：サーマクール" required />
+          <input name="shop" placeholder="店舗・クリニック" />
+          <input name="cost" inputmode="numeric" placeholder="金額" />
+          <select name="nextDays">
+            <option value="">次回目安なし</option>
+            <option value="30">30日後</option>
+            <option value="45">45日後</option>
+            <option value="90">3か月後</option>
+            <option value="180">半年後</option>
+            <option value="365">1年後</option>
+          </select>
+          <textarea name="note" placeholder="メモ：痛み、効果、色味、満足度など"></textarea>
+          <button class="primary" type="submit">記録</button>
+        </form>
+        <div id="careList" class="list stacked"></div>
+      </section>
 
-    function renderGroupManager() {
-      const groupList = type => state.groups[type].map(group => `
-        <div class="group-row">
-          <strong>${escapeHTML(group)}</strong>
-          <div class="mini-actions">
-            <button class="btn" onclick="renameGroup('${type}', '${escapeHTML(group)}')">編集</button>
-            <button class="btn btn-danger" onclick="deleteGroup('${type}', '${escapeHTML(group)}')">削除</button>
+      <section id="reduce" class="panel" aria-labelledby="reduce-title">
+        <div class="section-head">
+          <div>
+            <h2 id="reduce-title">減らす</h2>
+            <p>SNS・YouTube・スマホ時間の詰まりを減らす実験ログ。</p>
           </div>
         </div>
-      `).join("");
+        <form id="reduceForm" class="form card">
+          <input name="method" placeholder="方法 例：スマホを集合ポストへ" required />
+          <select name="situation">
+            <option>仕事中</option>
+            <option>休日</option>
+            <option>夜</option>
+            <option>外出時</option>
+            <option>寝る前</option>
+          </select>
+          <select name="score">
+            <option value="5">効果：5 とても良い</option>
+            <option value="4">効果：4 良い</option>
+            <option value="3">効果：3 普通</option>
+            <option value="2">効果：2 微妙</option>
+            <option value="1">効果：1 合わない</option>
+          </select>
+          <textarea name="note" placeholder="続いた理由・失敗した理由・次に変えること"></textarea>
+          <button class="primary" type="submit">記録</button>
+        </form>
+        <div id="reduceList" class="list stacked"></div>
+      </section>
 
-      return `
-        <div class="form-card">
-          <h2>グループ管理</h2>
-          <p class="muted">店舗名・通販先名を追加、変更、削除できます。</p>
-          <div class="two-col">
-            <label>区分
-              <select id="newGroupType">
-                <option value="store">実店舗</option>
-                <option value="online">通販</option>
-              </select>
-            </label>
-            <label>追加する名前
-              <input id="newGroupName" placeholder="例：オーケー">
-            </label>
-          </div>
-          <button class="btn btn-primary" onclick="addGroup()">グループを追加</button>
-          <div class="group-box">
-            <h3>実店舗</h3>
-            ${groupList("store")}
-          </div>
-          <div class="group-box">
-            <h3>通販</h3>
-            ${groupList("online")}
+      <section id="memo" class="panel" aria-labelledby="memo-title">
+        <div class="section-head">
+          <div>
+            <h2 id="memo-title">メモ</h2>
+            <p>やりたいことをバーッと入れて、行動候補に分ける。</p>
           </div>
         </div>
-      `;
-    }
-
-    function renderManage() {
-      const keyword = searchText.trim().toLowerCase();
-      const items = getEnrichedItems().filter(item => {
-        if (!keyword) return true;
-        return [item.name, item.group, item.note].join(" ").toLowerCase().includes(keyword);
-      });
-      return `
-        <section class="section">
-          ${showForm ? renderForm() : `<button class="btn btn-primary" onclick="startAdd()">商品を追加</button>`}
-          ${renderGroupManager()}
-          <div class="search-card">
-            <h2>商品管理</h2>
-            <input value="${escapeHTML(searchText)}" placeholder="商品名・グループ・メモで検索" oninput="searchText=this.value; render();">
+        <form id="memoForm" class="card memo-box">
+          <textarea name="body" rows="8" placeholder="例：英語の勉強を再開したい。美容ログを整理したい。部屋を片付けたい。スコットランド旅行の持ち物を考えたい。" required></textarea>
+          <div class="row wrap">
+            <button class="primary" type="submit">メモを保存</button>
+            <button id="makeActionCandidates" class="ghost" type="button">行動候補を作る</button>
+            <button id="copyPrompt" class="ghost" type="button">ChatGPT用プロンプトをコピー</button>
           </div>
-          ${renderItems(items, "商品がありません。")}
-        </section>
-      `;
-    }
+        </form>
+        <article class="card">
+          <h3>行動候補</h3>
+          <div id="actionCandidates" class="suggestions"></div>
+        </article>
+        <div id="memoList" class="list stacked"></div>
+      </section>
+    </main>
+  </div>
 
-    function renderTabs() {
-      const tabs = [
-        ["today", "今日"],
-        ["store", "実店舗"],
-        ["online", "通販"],
-        ["manage", "管理"]
-      ];
-      return `
-        <nav class="tabs">
-          <div class="tabs-inner">
-            ${tabs.map(([key, label]) => `<button class="tab ${tab === key ? "active" : ""}" onclick="setTab('${key}')">${label}</button>`).join("")}
-          </div>
-        </nav>
-      `;
-    }
+  <template id="itemTemplate">
+    <article class="item-card">
+      <div class="item-main"></div>
+      <div class="item-actions">
+        <button class="ghost small done-btn" type="button">完了</button>
+        <button class="danger small delete-btn" type="button">削除</button>
+      </div>
+    </article>
+  </template>
 
-    function render() {
-      let content = "";
-      if (tab === "today") content = renderToday();
-      if (tab === "store") content = renderStore();
-      if (tab === "online") content = renderOnline();
-      if (tab === "manage") content = renderManage();
-
-      document.getElementById("root").innerHTML = `
-        <div class="app">
-          ${renderHeader()}
-          <main>${content}</main>
-        </div>
-        ${renderTabs()}
-      `;
-    }
-
-    function setTab(next) {
-      tab = next;
-      render();
-    }
-    function selectStoreGroup(group) {
-      selectedStoreGroup = group;
-      render();
-    }
-    function selectOnlineGroup(group) {
-      selectedOnlineGroup = group;
-      render();
-    }
-    function markBought(id) {
-      state.items = state.items.map(item => item.id === id ? { ...item, lastBought: todayISO() } : item);
-      saveState();
-      render();
-    }
-    function deleteItem(id) {
-      if (!confirm("この商品を削除しますか？")) return;
-      state.items = state.items.filter(item => item.id !== id);
-      saveState();
-      render();
-    }
-    function startAdd() {
-      const type = tab === "online" ? "online" : "store";
-      form = {
-        name: "",
-        type,
-        group: state.groups[type][0] || "",
-        intervalDays: 30,
-        lastBought: todayISO(),
-        note: "",
-        subscription: false
-      };
-      editingId = null;
-      showForm = true;
-      tab = "manage";
-      render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    function startEdit(id) {
-      const item = state.items.find(item => item.id === id);
-      if (!item) return;
-      form = { ...item };
-      editingId = id;
-      showForm = true;
-      tab = "manage";
-      render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    function changeFormType(type) {
-      form.type = type;
-      form.group = state.groups[type][0] || "";
-      render();
-    }
-    function saveForm() {
-      const cleanName = form.name.trim();
-      if (!cleanName) {
-        alert("商品名を入力してください。");
-        return;
-      }
-      if (!form.group) {
-        alert("グループを選んでください。");
-        return;
-      }
-      const cleanForm = {
-        ...form,
-        name: cleanName,
-        intervalDays: Math.max(1, Number(form.intervalDays || 1)),
-        lastBought: form.lastBought || todayISO(),
-        note: (form.note || "").trim(),
-        subscription: !!form.subscription
-      };
-      if (editingId) {
-        state.items = state.items.map(item => item.id === editingId ? { ...item, ...cleanForm } : item);
-      } else {
-        state.items.unshift({ id: makeId(), ...cleanForm });
-      }
-      saveState();
-      showForm = false;
-      editingId = null;
-      render();
-    }
-    function cancelForm() {
-      showForm = false;
-      editingId = null;
-      render();
-    }
-    function addGroup() {
-      const type = document.getElementById("newGroupType").value;
-      const name = document.getElementById("newGroupName").value.trim();
-      if (!name) return;
-      if (state.groups[type].includes(name)) {
-        alert("同じ名前のグループがあります。");
-        return;
-      }
-      state.groups[type].push(name);
-      saveState();
-      render();
-    }
-    function renameGroup(type, oldName) {
-      const nextName = prompt("新しい名前", oldName);
-      if (!nextName) return;
-      const cleanName = nextName.trim();
-      if (!cleanName || cleanName === oldName) return;
-      if (state.groups[type].includes(cleanName)) {
-        alert("同じ名前のグループがあります。");
-        return;
-      }
-      state.groups[type] = state.groups[type].map(name => name === oldName ? cleanName : name);
-      state.items = state.items.map(item => item.type === type && item.group === oldName ? { ...item, group: cleanName } : item);
-      saveState();
-      render();
-    }
-    function deleteGroup(type, groupName) {
-      const count = state.items.filter(item => item.type === type && item.group === groupName).length;
-      if (count > 0) {
-        alert("このグループに商品があります。先に商品を移動または削除してください。");
-        return;
-      }
-      if (!confirm(`${groupName}を削除しますか？`)) return;
-      state.groups[type] = state.groups[type].filter(name => name !== groupName);
-      saveState();
-      render();
-    }
-
-    render();
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
