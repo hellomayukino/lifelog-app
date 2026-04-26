@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Lifelog</title>
+</head>
+<body>
+  <h1>ライフログ</h1>
+  <input id="text" placeholder="メモ" />
+  <button onclick="add()">追加</button>
+  <ul id="list"></ul>
+
+  <script>
+    let logs = JSON.parse(localStorage.getItem("logs") || "[]");
+
+    function render() {
+      const list = document.getElementById("list");
+      list.innerHTML = "";
+      logs.forEach((log, i) => {
+        const li = document.createElement("li");
+        li.textContent = log;
+        li.onclick = () => {
+          logs.splice(i,1);
+          save();
+        };
+        list.appendChild(li);
+      });
+    }
+
+    function add() {
+      const input = document.getElementById("text");
+      logs.push(input.value);
+      input.value = "";
+      save();
+    }
+
+    function save() {
+      localStorage.setItem("logs", JSON.stringify(logs));
+      render();
+    }
+
+    render();
+  </script>
+
+</body>
+</html>
