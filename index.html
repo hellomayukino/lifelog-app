@@ -3,184 +3,125 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#f6efe7" />
-  <title>生活</title>
+  <meta name="theme-color" content="#f6eee7" />
+  <title>今これ</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app-shell">
-    <header class="hero">
+    <header class="topbar">
       <div>
-        <p class="eyebrow">Personal Life OS</p>
-        <h1>生活</h1>
-        <p class="subcopy">日常の詰まりを、少しずつほどくためのメモ。</p>
+        <p class="eyebrow">生活ログから、いま一番軽い一手を出す</p>
+        <h1>今これ</h1>
       </div>
-      <button id="resetDemo" class="ghost small" type="button">初期化</button>
+      <button class="ghost small" id="resetBtn" type="button">初期化</button>
     </header>
 
-    <nav class="tabs" aria-label="メインメニュー">
-      <button class="tab active" data-tab="today" type="button">今日</button>
-      <button class="tab" data-tab="buy" type="button">買う</button>
-      <button class="tab" data-tab="care" type="button">整える</button>
-      <button class="tab" data-tab="reduce" type="button">減らす</button>
-      <button class="tab" data-tab="memo" type="button">メモ</button>
-    </nav>
-
     <main>
-      <section id="today" class="panel active" aria-labelledby="today-title">
-        <div class="section-head">
-          <div>
-            <h2 id="today-title">今日</h2>
-            <p>今やると生活が少し軽くなること。</p>
+      <section class="tab-panel active" id="tab-now">
+        <div class="hero card">
+          <div class="hero-text">
+            <p class="label">スマホに逃げそうな瞬間用</p>
+            <h2 id="suggestionTitle">机を10秒だけ拭く</h2>
+            <p id="suggestionMeta">整える・1分・だるい日OK</p>
           </div>
-          <button id="refreshToday" class="primary" type="button">提案を更新</button>
+          <div class="hero-actions">
+            <button class="primary" id="doneBtn" type="button">できた</button>
+            <button class="secondary" id="nextBtn" type="button">別の候補</button>
+            <button class="ghost" id="lighterBtn" type="button">もっと軽く</button>
+          </div>
         </div>
 
-        <div class="quick-actions">
-          <button class="time-chip" data-minutes="5" type="button">5分</button>
-          <button class="time-chip" data-minutes="15" type="button">15分</button>
-          <button class="time-chip" data-minutes="30" type="button">30分</button>
-          <button class="time-chip" data-minutes="60" type="button">1時間</button>
-        </div>
+        <section class="card">
+          <h3>今の状態</h3>
+          <div class="chip-grid" id="modeChips"></div>
+          <div class="mini-row">
+            <button class="secondary" data-time="1" type="button">1分</button>
+            <button class="secondary" data-time="5" type="button">5分</button>
+            <button class="secondary" data-time="15" type="button">15分</button>
+            <button class="secondary" data-time="30" type="button">30分</button>
+          </div>
+        </section>
 
-        <div class="grid two">
-          <article class="card">
-            <h3>時間別サジェスト</h3>
-            <div id="timeSuggestions" class="list empty-state">上の時間ボタンを押すと、今できる候補が出ます。</div>
-          </article>
-          <article class="card">
-            <h3>そろそろ</h3>
-            <div id="soonList" class="list"></div>
-          </article>
-        </div>
-
-        <article class="card">
-          <h3>今日の小さな提案</h3>
-          <div id="todaySuggestions" class="suggestions"></div>
-        </article>
+        <section class="card">
+          <div class="section-head">
+            <h3>今日の小さい候補</h3>
+            <button class="ghost small" id="shuffleListBtn" type="button">入れ替え</button>
+          </div>
+          <div id="quickList" class="quick-list"></div>
+        </section>
       </section>
 
-      <section id="buy" class="panel" aria-labelledby="buy-title">
-        <div class="section-head">
-          <div>
-            <h2 id="buy-title">買う</h2>
-            <p>日用品・食品・通販の買い忘れを減らす。</p>
+      <section class="tab-panel" id="tab-materials">
+        <section class="card">
+          <h2>材料</h2>
+          <p class="muted">やりたいこと・気になること・詰まりを、雑に入れておく場所です。</p>
+          <textarea id="brainDump" rows="7" placeholder="例：TOEICをまた勉強したい。AI画像制作を進めたい。部屋が散らかっている。旅行準備が気になる。"></textarea>
+          <div class="mini-row">
+            <button class="primary" id="saveDumpBtn" type="button">材料として保存</button>
+            <button class="secondary" id="makeStepsBtn" type="button">小さい行動に分ける</button>
           </div>
-        </div>
-        <form id="buyForm" class="form card">
-          <input name="item" placeholder="商品名 例：洗剤" required />
-          <input name="place" placeholder="お店・通販先 例：Amazon" />
-          <select name="status">
-            <option>優先</option>
-            <option>そろそろ</option>
-            <option>ついでに買う</option>
-            <option>在庫OK</option>
-          </select>
-          <input name="price" inputmode="numeric" placeholder="値段" />
-          <input name="bestPrice" inputmode="numeric" placeholder="底値" />
-          <button class="primary" type="submit">追加</button>
-        </form>
-        <div id="buyList" class="list stacked"></div>
+        </section>
+        <section class="card">
+          <div class="section-head">
+            <h3>材料リスト</h3>
+            <button class="ghost small" id="clearMaterialsBtn" type="button">整理</button>
+          </div>
+          <div id="materialsList" class="stack"></div>
+        </section>
+        <section class="card">
+          <h3>ChatGPTに貼る用</h3>
+          <p class="muted">本物のAI整理をしたい時用です。コピーしてChatGPTに貼れます。</p>
+          <textarea id="promptBox" rows="6" readonly></textarea>
+          <button class="secondary" id="copyPromptBtn" type="button">コピー</button>
+        </section>
       </section>
 
-      <section id="care" class="panel" aria-labelledby="care-title">
-        <div class="section-head">
-          <div>
-            <h2 id="care-title">整える</h2>
-            <p>美容・ヘア・脱毛・体のメンテ記録。</p>
+      <section class="tab-panel" id="tab-buy">
+        <section class="card">
+          <h2>買う</h2>
+          <div class="form-grid">
+            <input id="buyName" placeholder="買うもの" />
+            <input id="buyPlace" placeholder="店・通販先" />
+            <input id="buyPrice" placeholder="値段・底値メモ" />
           </div>
-        </div>
-        <form id="careForm" class="form card">
-          <input name="date" type="date" required />
-          <select name="category">
-            <option>美容医療</option>
-            <option>ヘア</option>
-            <option>脱毛</option>
-            <option>ネイル</option>
-            <option>肌管理</option>
-            <option>体調</option>
-          </select>
-          <input name="title" placeholder="施術・内容 例：サーマクール" required />
-          <input name="shop" placeholder="店舗・クリニック" />
-          <input name="cost" inputmode="numeric" placeholder="金額" />
-          <select name="nextDays">
-            <option value="">次回目安なし</option>
-            <option value="30">30日後</option>
-            <option value="45">45日後</option>
-            <option value="90">3か月後</option>
-            <option value="180">半年後</option>
-            <option value="365">1年後</option>
-          </select>
-          <textarea name="note" placeholder="メモ：痛み、効果、色味、満足度など"></textarea>
-          <button class="primary" type="submit">記録</button>
-        </form>
-        <div id="careList" class="list stacked"></div>
+          <button class="primary" id="addBuyBtn" type="button">追加</button>
+        </section>
+        <section class="card"><div id="buyList" class="stack"></div></section>
       </section>
 
-      <section id="reduce" class="panel" aria-labelledby="reduce-title">
-        <div class="section-head">
-          <div>
-            <h2 id="reduce-title">減らす</h2>
-            <p>SNS・YouTube・スマホ時間の詰まりを減らす実験ログ。</p>
+      <section class="tab-panel" id="tab-care">
+        <section class="card">
+          <h2>整える</h2>
+          <div class="form-grid">
+            <input id="careName" placeholder="施術・メンテ名" />
+            <input id="careCategory" placeholder="カテゴリ 例：美容医療/ヘア/脱毛" />
+            <input id="careDate" type="date" />
+            <input id="careMemo" placeholder="金額・満足度・メモ" />
           </div>
-        </div>
-        <form id="reduceForm" class="form card">
-          <input name="method" placeholder="方法 例：スマホを集合ポストへ" required />
-          <select name="situation">
-            <option>仕事中</option>
-            <option>休日</option>
-            <option>夜</option>
-            <option>外出時</option>
-            <option>寝る前</option>
-          </select>
-          <select name="score">
-            <option value="5">効果：5 とても良い</option>
-            <option value="4">効果：4 良い</option>
-            <option value="3">効果：3 普通</option>
-            <option value="2">効果：2 微妙</option>
-            <option value="1">効果：1 合わない</option>
-          </select>
-          <textarea name="note" placeholder="続いた理由・失敗した理由・次に変えること"></textarea>
-          <button class="primary" type="submit">記録</button>
-        </form>
-        <div id="reduceList" class="list stacked"></div>
+          <button class="primary" id="addCareBtn" type="button">記録する</button>
+        </section>
+        <section class="card"><div id="careList" class="stack"></div></section>
       </section>
 
-      <section id="memo" class="panel" aria-labelledby="memo-title">
-        <div class="section-head">
-          <div>
-            <h2 id="memo-title">メモ</h2>
-            <p>やりたいことをバーッと入れて、行動候補に分ける。</p>
-          </div>
-        </div>
-        <form id="memoForm" class="card memo-box">
-          <textarea name="body" rows="8" placeholder="例：英語の勉強を再開したい。美容ログを整理したい。部屋を片付けたい。スコットランド旅行の持ち物を考えたい。" required></textarea>
-          <div class="row wrap">
-            <button class="primary" type="submit">メモを保存</button>
-            <button id="makeActionCandidates" class="ghost" type="button">行動候補を作る</button>
-            <button id="copyPrompt" class="ghost" type="button">ChatGPT用プロンプトをコピー</button>
-          </div>
-        </form>
-        <article class="card">
-          <h3>行動候補</h3>
-          <div id="actionCandidates" class="suggestions"></div>
-        </article>
-        <div id="memoList" class="list stacked"></div>
+      <section class="tab-panel" id="tab-log">
+        <section class="card">
+          <h2>記録</h2>
+          <p class="muted">やったことは、大小問わずここに残します。皿1枚でもOKです。</p>
+          <div id="doneList" class="stack"></div>
+        </section>
       </section>
     </main>
+
+    <nav class="bottom-nav" aria-label="メイン">
+      <button class="nav active" data-tab="now" type="button">今これ</button>
+      <button class="nav" data-tab="materials" type="button">材料</button>
+      <button class="nav" data-tab="buy" type="button">買う</button>
+      <button class="nav" data-tab="care" type="button">整える</button>
+      <button class="nav" data-tab="log" type="button">記録</button>
+    </nav>
   </div>
-
-  <template id="itemTemplate">
-    <article class="item-card">
-      <div class="item-main"></div>
-      <div class="item-actions">
-        <button class="ghost small done-btn" type="button">完了</button>
-        <button class="danger small delete-btn" type="button">削除</button>
-      </div>
-    </article>
-  </template>
-
   <script src="app.js"></script>
 </body>
 </html>

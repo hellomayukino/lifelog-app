@@ -1,268 +1,229 @@
-const KEY = "seikatsu-app-v1";
-const todayISO = () => new Date().toISOString().slice(0, 10);
-const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+const STORAGE_KEY = 'imakore-life-v1';
 
-const defaultData = {
-  buy: [
-    { id: uid(), item: "トイレットペーパー", place: "ドラッグストア", status: "そろそろ", price: "", bestPrice: "" },
-    { id: uid(), item: "バナナ", place: "スーパー", status: "ついでに買う", price: "", bestPrice: "" }
+const seedActions = [
+  { title: '机を10秒だけ拭く', type: '整える', minutes: 1, energy: 'low', tags: ['だるい', '机にいる', 'スマホ触りたい'], source: '生活' },
+  { title: 'コップを流しに持っていく', type: '整える', minutes: 1, energy: 'low', tags: ['だるい', '夜', 'スマホ触りたい'], source: '家事' },
+  { title: '皿を1枚だけ洗う', type: '整える', minutes: 3, energy: 'low', tags: ['家', '夜', 'だるい'], source: '家事' },
+  { title: '床のものを3個だけ拾う', type: '整える', minutes: 3, energy: 'low', tags: ['家', 'だるい'], source: '片付け' },
+  { title: 'スマホを玄関かポスト近くに置く', type: '減らす', minutes: 1, energy: 'low', tags: ['スマホ触りたい', 'デトックス', '夜'], source: 'デジタルデトックス' },
+  { title: 'YouTubeを閉じて、PCでこのアプリを開く', type: '減らす', minutes: 1, energy: 'low', tags: ['スマホ触りたい', 'デトックス'], source: 'デジタルデトックス' },
+  { title: 'スマホなし散歩用の音楽候補を1つメモする', type: '減らす', minutes: 5, energy: 'mid', tags: ['デトックス', '外出前'], source: 'デジタルデトックス' },
+  { title: '今日の気分を1行だけ残す', type: '残す', minutes: 1, energy: 'low', tags: ['だるい', '夜', '朝'], source: 'ログ' },
+  { title: '美容ログを1件だけ入力する', type: '残す', minutes: 5, energy: 'mid', tags: ['美容', '夜'], source: '美容' },
+  { title: '前回の美容施術日を1つ確認する', type: '整える', minutes: 5, energy: 'mid', tags: ['美容', 'だるい'], source: '美容' },
+  { title: '買うものを1個だけ追加する', type: '残す', minutes: 1, energy: 'low', tags: ['買い物', '外出前', 'だるい'], source: '買う' },
+  { title: '底値メモを1つだけ書く', type: '残す', minutes: 3, energy: 'mid', tags: ['買い物', 'お金'], source: '買う' },
+  { title: '英単語を1個だけ見る', type: '進める', minutes: 1, energy: 'low', tags: ['英語', 'TOEIC', 'だるい'], source: '英語' },
+  { title: 'TOEIC Part 5を1問だけ解く', type: '進める', minutes: 3, energy: 'mid', tags: ['英語', 'TOEIC', '机にいる'], source: '英語' },
+  { title: 'AI画像制作の参考を1枚だけ保存する', type: '進める', minutes: 5, energy: 'mid', tags: ['AI制作', 'クリエイティブ'], source: 'AI制作' },
+  { title: '画像生成で作りたい雰囲気を3語だけ書く', type: '進める', minutes: 3, energy: 'low', tags: ['AI制作', 'だるい'], source: 'AI制作' },
+  { title: 'Scotland旅行の持ち物を1つだけ書く', type: '進める', minutes: 3, energy: 'low', tags: ['旅行', 'だるい'], source: '旅行' },
+  { title: '旅行予算で気になる金額を1つメモする', type: '残す', minutes: 5, energy: 'mid', tags: ['旅行', 'お金'], source: '旅行' },
+  { title: 'スクワットを5回だけする', type: '整える', minutes: 1, energy: 'mid', tags: ['運動', '朝', 'だるい'], source: '体' },
+  { title: '水を飲む', type: '整える', minutes: 1, energy: 'low', tags: ['朝', 'だるい', 'スマホ触りたい'], source: '体' },
+  { title: '支出メモを1つだけ残す', type: '残す', minutes: 3, energy: 'low', tags: ['お金', '夜'], source: 'お金' },
+  { title: '副業アイデアを1行だけ書く', type: '進める', minutes: 3, energy: 'low', tags: ['副業', '自由な働き方'], source: '仕事' },
+  { title: 'ChatGPTに聞きたいことを1行だけ書く', type: '残す', minutes: 1, energy: 'low', tags: ['だるい', '机にいる'], source: 'メモ' },
+  { title: 'カーテンを開ける／閉める', type: '整える', minutes: 1, energy: 'low', tags: ['朝', '夜', 'だるい'], source: '生活' },
+];
+
+const modes = ['だるい', 'スマホ触りたい', '朝', '夜', '机にいる', '外出前', '美容', '旅行', '英語', 'AI制作', 'お金'];
+
+const defaultState = {
+  actions: seedActions,
+  activeMode: 'スマホ触りたい',
+  maxMinutes: 5,
+  current: null,
+  materials: [
+    '自由な働き方に近づきたい',
+    'AI画像・動画制作を少しずつ進めたい',
+    'Scotland旅行準備を気楽に進めたい',
+    'デジタルデトックスしたい',
+    '美容ログを残して、施術の効果を比較したい',
+    'TOEIC・英語を重くならない形で続けたい',
   ],
+  buy: [],
   care: [],
-  reduce: [
-    { id: uid(), method: "スマホを集合ポストに2時間置く", situation: "休日", score: "5", note: "家の中で隠すより効果が高い" }
-  ],
-  memo: [
-    { id: uid(), body: "美容ログを整理したい\n英語の勉強を再開したい\n部屋を片付けたい", createdAt: todayISO() }
-  ]
+  done: []
 };
 
-let state = load();
+let state = loadState();
 
-function load() {
+function loadState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return structuredClone(defaultState);
   try {
-    return JSON.parse(localStorage.getItem(KEY)) || structuredClone(defaultData);
+    const parsed = JSON.parse(saved);
+    return { ...structuredClone(defaultState), ...parsed, actions: parsed.actions?.length ? parsed.actions : seedActions };
   } catch {
-    return structuredClone(defaultData);
+    return structuredClone(defaultState);
   }
 }
-function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
-function yen(v) { return v ? `${Number(v).toLocaleString()}円` : ""; }
-function daysBetween(a, b) {
-  const one = new Date(a); const two = new Date(b);
-  return Math.ceil((two - one) / (1000 * 60 * 60 * 24));
-}
-function addDays(date, days) {
-  const d = new Date(date); d.setDate(d.getDate() + Number(days));
-  return d.toISOString().slice(0, 10);
-}
-
-function switchTab(name) {
-  document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === name));
-  document.querySelectorAll(".panel").forEach(panel => panel.classList.toggle("active", panel.id === name));
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function $(id) { return document.getElementById(id); }
+function todayLabel() { return new Date().toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+function toast(message) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = message;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 250); }, 1600);
 }
 
-document.querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
+function scoreAction(action) {
+  let score = 0;
+  if (action.minutes <= state.maxMinutes) score += 10; else score -= (action.minutes - state.maxMinutes) * 2;
+  if (action.tags.includes(state.activeMode)) score += 8;
+  if (state.activeMode === 'だるい' && action.energy === 'low') score += 4;
+  if (state.activeMode === 'スマホ触りたい' && ['減らす', '整える'].includes(action.type)) score += 4;
+  if (state.activeMode === '朝' && action.tags.includes('朝')) score += 3;
+  if (state.activeMode === '夜' && action.tags.includes('夜')) score += 3;
+  score += Math.random() * 3;
+  return score;
+}
+function candidates() {
+  return [...state.actions].sort((a,b) => scoreAction(b) - scoreAction(a));
+}
+function pickSuggestion(lighter = false) {
+  const list = candidates().filter(a => lighter ? a.minutes <= Math.min(3, state.maxMinutes) : true);
+  state.current = list[0] || state.actions[0];
+  saveState();
+  renderNow();
+}
 
-document.getElementById("resetDemo").addEventListener("click", () => {
-  if (!confirm("保存データを初期化しますか？")) return;
-  localStorage.removeItem(KEY);
-  state = structuredClone(defaultData);
+function renderNow() {
+  if (!state.current) state.current = candidates()[0] || state.actions[0];
+  $('suggestionTitle').textContent = state.current.title;
+  $('suggestionMeta').textContent = `${state.current.type}・${state.current.minutes}分・${state.current.source}`;
+  renderModes();
+  renderQuickList();
+}
+function renderModes() {
+  $('modeChips').innerHTML = modes.map(mode => `<button type="button" class="chip ${state.activeMode === mode ? 'active' : ''}" data-mode="${mode}">${mode}</button>`).join('');
+  document.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => {
+    state.activeMode = btn.dataset.mode;
+    pickSuggestion();
+  }));
+}
+function renderQuickList() {
+  const list = candidates().slice(0, 5);
+  $('quickList').innerHTML = list.map((a, index) => `
+    <div class="item">
+      <div class="item-title">${escapeHtml(a.title)}</div>
+      <div class="item-meta">${a.type}・${a.minutes}分・${a.source}</div>
+      <div class="item-actions">
+        <button class="secondary small" data-do-index="${index}" type="button">できた</button>
+        <button class="ghost small" data-use-index="${index}" type="button">これにする</button>
+      </div>
+    </div>`).join('');
+  document.querySelectorAll('[data-use-index]').forEach(btn => btn.addEventListener('click', () => {
+    state.current = list[Number(btn.dataset.useIndex)];
+    saveState(); renderNow();
+  }));
+  document.querySelectorAll('[data-do-index]').forEach(btn => btn.addEventListener('click', () => completeAction(list[Number(btn.dataset.doIndex)])));
+}
+function completeAction(action = state.current) {
+  state.done.unshift({ ...action, at: todayLabel() });
+  state.done = state.done.slice(0, 80);
+  saveState();
+  toast('記録しました。小さくても進んでいます。');
+  pickSuggestion();
   renderAll();
-});
-
-function bindForm(id, handler) {
-  document.getElementById(id).addEventListener("submit", e => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(e.currentTarget));
-    handler(data);
-    e.currentTarget.reset();
-    const dateInput = e.currentTarget.querySelector('input[type="date"]');
-    if (dateInput) dateInput.value = todayISO();
-    save(); renderAll();
-  });
 }
-
-bindForm("buyForm", data => state.buy.unshift({ id: uid(), ...data }));
-bindForm("careForm", data => state.care.unshift({ id: uid(), ...data }));
-bindForm("reduceForm", data => state.reduce.unshift({ id: uid(), ...data }));
-bindForm("memoForm", data => state.memo.unshift({ id: uid(), body: data.body, createdAt: todayISO() }));
-
-document.querySelector('#careForm input[name="date"]').value = todayISO();
-
-function removeItem(type, id) {
-  state[type] = state[type].filter(x => x.id !== id);
-  save(); renderAll();
+function renderMaterials() {
+  $('materialsList').innerHTML = state.materials.length ? state.materials.map((m, i) => `
+    <div class="item">
+      <div class="item-title">${escapeHtml(m)}</div>
+      <div class="item-actions">
+        <button class="secondary small" data-step="${i}" type="button">小さい行動にする</button>
+        <button class="ghost small" data-delete-material="${i}" type="button">削除</button>
+      </div>
+    </div>`).join('') : '<p class="muted">まだ材料がありません。</p>';
+  document.querySelectorAll('[data-delete-material]').forEach(btn => btn.addEventListener('click', () => { state.materials.splice(Number(btn.dataset.deleteMaterial), 1); saveState(); renderMaterials(); updatePrompt(); }));
+  document.querySelectorAll('[data-step]').forEach(btn => btn.addEventListener('click', () => {
+    addGeneratedActions(state.materials[Number(btn.dataset.step)]);
+    toast('行動候補に追加しました');
+    renderAll();
+  }));
+  updatePrompt();
 }
-function completeBuy(id) {
-  const item = state.buy.find(x => x.id === id);
-  if (item) item.status = "在庫OK";
-  save(); renderAll();
+function addGeneratedActions(text) {
+  const t = text.trim();
+  if (!t) return;
+  const generated = [
+    { title: `${t}について1行だけメモする`, type: '残す', minutes: 1, energy: 'low', tags: ['だるい', '机にいる'], source: '材料' },
+    { title: `${t}の次の一手を3つ書く`, type: '進める', minutes: 5, energy: 'mid', tags: ['机にいる'], source: '材料' },
+    { title: `${t}を15分だけ進める`, type: '進める', minutes: 15, energy: 'mid', tags: ['机にいる'], source: '材料' },
+  ];
+  state.actions.unshift(...generated);
+  saveState();
 }
-
-function makeCard(type, id, html, doneLabel = "完了") {
-  const template = document.getElementById("itemTemplate").content.cloneNode(true);
-  template.querySelector(".item-main").innerHTML = html;
-  const done = template.querySelector(".done-btn");
-  done.textContent = doneLabel;
-  done.addEventListener("click", () => type === "buy" ? completeBuy(id) : removeItem(type, id));
-  template.querySelector(".delete-btn").addEventListener("click", () => removeItem(type, id));
-  return template;
+function updatePrompt() {
+  $('promptBox').value = `以下は私の生活アプリに入っている材料です。これを「今この瞬間にできる一番小さい行動」に分けてください。完璧な予定表ではなく、1分・5分・15分・30分の行動候補にしてください。種類は「進める」「整える」「減らす」「残す」に分けて、だるい時にもできる候補を優先してください。\n\n${state.materials.map((m, i) => `${i + 1}. ${m}`).join('\n')}`;
 }
-
 function renderBuy() {
-  const root = document.getElementById("buyList"); root.innerHTML = "";
-  if (!state.buy.length) root.innerHTML = `<div class="empty-state">買うものはまだありません。</div>`;
-  state.buy.forEach(x => {
-    root.appendChild(makeCard("buy", x.id, `
-      <strong>${escapeHTML(x.item)}</strong>
-      <div class="meta">${escapeHTML(x.place || "場所未定")}</div>
-      <span class="badge">${escapeHTML(x.status)}</span>
-      ${x.price ? `<span class="badge">値段 ${yen(x.price)}</span>` : ""}
-      ${x.bestPrice ? `<span class="badge">底値 ${yen(x.bestPrice)}</span>` : ""}
-    `, "在庫OK"));
-  });
+  $('buyList').innerHTML = state.buy.length ? state.buy.map((b, i) => `
+    <div class="item"><div class="item-title">${escapeHtml(b.name)}</div><div class="item-meta">${escapeHtml(b.place || '場所未設定')}・${escapeHtml(b.price || '値段未設定')}</div><button class="ghost small" data-delete-buy="${i}" type="button">削除</button></div>`).join('') : '<p class="muted">買うものはまだありません。</p>';
+  document.querySelectorAll('[data-delete-buy]').forEach(btn => btn.addEventListener('click', () => { state.buy.splice(Number(btn.dataset.deleteBuy), 1); saveState(); renderBuy(); }));
 }
 function renderCare() {
-  const root = document.getElementById("careList"); root.innerHTML = "";
-  if (!state.care.length) root.innerHTML = `<div class="empty-state">美容・メンテ記録はまだありません。</div>`;
-  state.care
-    .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
-    .forEach(x => {
-      const next = x.nextDays ? addDays(x.date, x.nextDays) : "";
-      root.appendChild(makeCard("care", x.id, `
-        <strong>${escapeHTML(x.title)}</strong>
-        <div class="meta">${escapeHTML(x.date)}｜${escapeHTML(x.category)}｜${escapeHTML(x.shop || "店舗未入力")}</div>
-        ${x.cost ? `<span class="badge">${yen(x.cost)}</span>` : ""}
-        ${next ? `<span class="badge">次回目安 ${next}</span>` : ""}
-        ${x.note ? `<p class="meta">${escapeHTML(x.note)}</p>` : ""}
-      `, "閉じる"));
-    });
+  $('careList').innerHTML = state.care.length ? state.care.map((c, i) => `
+    <div class="item"><div class="item-title">${escapeHtml(c.name)}</div><div class="item-meta">${escapeHtml(c.date || '日付未設定')}・${escapeHtml(c.category || 'カテゴリ未設定')}・${escapeHtml(c.memo || '')}</div><button class="ghost small" data-delete-care="${i}" type="button">削除</button></div>`).join('') : '<p class="muted">美容・メンテ記録はまだありません。</p>';
+  document.querySelectorAll('[data-delete-care]').forEach(btn => btn.addEventListener('click', () => { state.care.splice(Number(btn.dataset.deleteCare), 1); saveState(); renderCare(); }));
 }
-function renderReduce() {
-  const root = document.getElementById("reduceList"); root.innerHTML = "";
-  if (!state.reduce.length) root.innerHTML = `<div class="empty-state">デジタルデトックス記録はまだありません。</div>`;
-  state.reduce.forEach(x => {
-    root.appendChild(makeCard("reduce", x.id, `
-      <strong>${escapeHTML(x.method)}</strong>
-      <div class="meta">${escapeHTML(x.situation)}｜効果 ${escapeHTML(x.score)}/5</div>
-      ${x.note ? `<p class="meta">${escapeHTML(x.note)}</p>` : ""}
-    `, "閉じる"));
+function renderDone() {
+  $('doneList').innerHTML = state.done.length ? state.done.map(d => `
+    <div class="item"><div class="item-title">${escapeHtml(d.title)}</div><div class="item-meta">${escapeHtml(d.at)}・${d.type}・${d.minutes}分</div></div>`).join('') : '<p class="muted">まだ記録はありません。小さい行動ができたら「できた」を押してください。</p>';
+}
+function renderAll() { renderNow(); renderMaterials(); renderBuy(); renderCare(); renderDone(); }
+function escapeHtml(str) { return String(str).replace(/[&<>'"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[s])); }
+
+function bindEvents() {
+  document.querySelectorAll('.nav').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    $(`tab-${btn.dataset.tab}`).classList.add('active');
+  }));
+  document.querySelectorAll('[data-time]').forEach(btn => btn.addEventListener('click', () => { state.maxMinutes = Number(btn.dataset.time); pickSuggestion(); toast(`${state.maxMinutes}分以内で探します`); }));
+  $('doneBtn').addEventListener('click', () => completeAction());
+  $('nextBtn').addEventListener('click', () => pickSuggestion());
+  $('lighterBtn').addEventListener('click', () => pickSuggestion(true));
+  $('shuffleListBtn').addEventListener('click', () => { pickSuggestion(); renderQuickList(); });
+  $('saveDumpBtn').addEventListener('click', () => {
+    const text = $('brainDump').value.trim();
+    if (!text) return;
+    const lines = text.split(/\n|。|、/).map(x => x.trim()).filter(Boolean);
+    state.materials.unshift(...lines);
+    $('brainDump').value = '';
+    saveState(); renderMaterials(); toast('材料に保存しました');
+  });
+  $('makeStepsBtn').addEventListener('click', () => {
+    const text = $('brainDump').value.trim();
+    if (!text) return;
+    const lines = text.split(/\n|。/).map(x => x.trim()).filter(Boolean);
+    lines.forEach(addGeneratedActions);
+    toast('行動候補を作りました');
+    renderAll();
+  });
+  $('clearMaterialsBtn').addEventListener('click', () => { state.materials = []; saveState(); renderMaterials(); });
+  $('copyPromptBtn').addEventListener('click', async () => { await navigator.clipboard.writeText($('promptBox').value); toast('コピーしました'); });
+  $('addBuyBtn').addEventListener('click', () => {
+    const name = $('buyName').value.trim(); if (!name) return;
+    state.buy.unshift({ name, place: $('buyPlace').value.trim(), price: $('buyPrice').value.trim() });
+    ['buyName','buyPlace','buyPrice'].forEach(id => $(id).value = ''); saveState(); renderBuy(); toast('追加しました');
+  });
+  $('addCareBtn').addEventListener('click', () => {
+    const name = $('careName').value.trim(); if (!name) return;
+    state.care.unshift({ name, category: $('careCategory').value.trim(), date: $('careDate').value, memo: $('careMemo').value.trim() });
+    ['careName','careCategory','careDate','careMemo'].forEach(id => $(id).value = ''); saveState(); renderCare(); toast('記録しました');
+  });
+  $('resetBtn').addEventListener('click', () => {
+    if (!confirm('保存データを初期化しますか？')) return;
+    localStorage.removeItem(STORAGE_KEY); state = structuredClone(defaultState); renderAll(); toast('初期化しました');
   });
 }
-function renderMemo() {
-  const root = document.getElementById("memoList"); root.innerHTML = "";
-  if (!state.memo.length) root.innerHTML = `<div class="empty-state">メモはまだありません。</div>`;
-  state.memo.forEach(x => {
-    root.appendChild(makeCard("memo", x.id, `
-      <strong>${escapeHTML(x.createdAt)}</strong>
-      <p class="meta">${escapeHTML(x.body).replace(/\n/g, "<br>")}</p>
-    `, "処理済み"));
-  });
-}
 
-function getAllMemoText() {
-  return state.memo.map(x => x.body).join("\n");
-}
-
-function splitWants(text) {
-  return text
-    .split(/[\n。.!！?？、,・]+/)
-    .map(s => s.trim())
-    .filter(Boolean)
-    .slice(0, 24);
-}
-
-function categorize(text) {
-  const t = text.toLowerCase();
-  if (/美容|髪|ヘア|カラー|脱毛|ボトックス|サーマ|肌|爪|ネイル/.test(t)) return "整える";
-  if (/買|購入|amazon|楽天|スーパー|洗剤|日用品|食材/.test(t)) return "買う";
-  if (/スマホ|youtube|sns|インスタ|デトックス|ショート|だらだら/.test(t)) return "減らす";
-  if (/旅行|英語|勉強|仕事|副業|アプリ|片付け|部屋/.test(t)) return "進める";
-  return "生活";
-}
-
-function candidateFor(want, minutes) {
-  const cat = categorize(want);
-  const safeWant = want.replace(/^したい/, "");
-  if (minutes <= 5) {
-    return {
-      title: `${cat}：まず1行だけ書く`,
-      body: `「${safeWant}」について、今わかっていること・次に迷っていることを1行だけメモする。`
-    };
-  }
-  if (minutes <= 15) {
-    return {
-      title: `${cat}：小さな手順を3つに分ける`,
-      body: `「${safeWant}」を、準備・確認・実行の3ステップに分ける。今日やるのは一番軽い1つだけ。`
-    };
-  }
-  if (minutes <= 30) {
-    return {
-      title: `${cat}：1ステップだけ実行する`,
-      body: `「${safeWant}」のために、検索・予約確認・比較・片付けなど、完了が見える作業を1つだけ進める。`
-    };
-  }
-  return {
-    title: `${cat}：まとまった作業にする`,
-    body: `「${safeWant}」を30分作業＋10分整理＋5分次回メモに分けて進める。終わったら次の一手を1つ残す。`
-  };
-}
-
-function buildActionCandidates(minutes = 15) {
-  const wants = splitWants(getAllMemoText());
-  if (!wants.length) return [];
-  return wants.slice(0, 8).map(w => candidateFor(w, minutes));
-}
-
-function renderActionCandidates(minutes = 15, target = "actionCandidates") {
-  const root = document.getElementById(target);
-  const candidates = buildActionCandidates(minutes);
-  if (!candidates.length) {
-    root.innerHTML = `<div class="empty-state">まず「メモ」にやりたいことを書いてください。</div>`;
-    return;
-  }
-  root.innerHTML = candidates.map(c => `
-    <div class="suggestion">
-      <b>${escapeHTML(c.title)}</b>
-      <span>${escapeHTML(c.body)}</span>
-    </div>
-  `).join("");
-}
-
-function renderSoon() {
-  const root = document.getElementById("soonList");
-  const buys = state.buy.filter(x => ["優先", "そろそろ", "ついでに買う"].includes(x.status));
-  const cares = state.care.filter(x => x.nextDays && daysBetween(todayISO(), addDays(x.date, x.nextDays)) <= 14);
-  const items = [
-    ...buys.map(x => `買う：${x.item}（${x.status}）`),
-    ...cares.map(x => `整える：${x.title}（次回目安が近い）`)
-  ].slice(0, 8);
-  root.innerHTML = items.length
-    ? items.map(x => `<div class="suggestion">${escapeHTML(x)}</div>`).join("")
-    : `<div class="empty-state">今すぐの「そろそろ」はありません。</div>`;
-}
-
-function renderTodaySuggestions() {
-  const root = document.getElementById("todaySuggestions");
-  const suggestions = [];
-  const urgentBuy = state.buy.find(x => x.status === "優先") || state.buy.find(x => x.status === "そろそろ");
-  if (urgentBuy) suggestions.push({ title: "買い物の詰まりを1つ減らす", body: `「${urgentBuy.item}」を今日買うか、買わないならステータスを変える。` });
-  const goodDetox = state.reduce.sort((a,b) => Number(b.score) - Number(a.score))[0];
-  if (goodDetox) suggestions.push({ title: "スマホ時間を軽くする", body: `前に効果が高かった「${goodDetox.method}」を短時間だけ試す。` });
-  const memoCandidate = buildActionCandidates(5)[0];
-  if (memoCandidate) suggestions.push(memoCandidate);
-  if (!suggestions.length) suggestions.push({ title: "まず1つだけ預ける", body: "気になっていることをメモに1行だけ書く。" });
-  root.innerHTML = suggestions.map(c => `<div class="suggestion"><b>${escapeHTML(c.title)}</b><span>${escapeHTML(c.body)}</span></div>`).join("");
-}
-
-document.getElementById("makeActionCandidates").addEventListener("click", () => renderActionCandidates(15));
-document.getElementById("refreshToday").addEventListener("click", renderTodaySuggestions);
-document.querySelectorAll(".time-chip").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".time-chip").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    renderActionCandidates(Number(btn.dataset.minutes), "timeSuggestions");
-  });
-});
-
-document.getElementById("copyPrompt").addEventListener("click", async () => {
-  const text = getAllMemoText();
-  const prompt = `以下は私の「やりたいこと」メモです。\n目的は、抱え込まずに今日動ける小さな次アクションへ分解することです。\n\n条件：\n- 5分、15分、30分、1時間でできる行動候補に分けてください。\n- 最初の一歩は心理的ハードルが低いものにしてください。\n- 完璧に進めるより、詰まりを取ることを優先してください。\n\nメモ：\n${text}`;
-  try {
-    await navigator.clipboard.writeText(prompt);
-    alert("ChatGPT用プロンプトをコピーしました。");
-  } catch {
-    alert(prompt);
-  }
-});
-
-function escapeHTML(str = "") {
-  return String(str).replace(/[&<>'"]/g, ch => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
-  }[ch]));
-}
-
-function renderAll() {
-  renderBuy(); renderCare(); renderReduce(); renderMemo(); renderSoon(); renderTodaySuggestions(); renderActionCandidates(15);
-}
+bindEvents();
 renderAll();
